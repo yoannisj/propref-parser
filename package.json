@@ -1,0 +1,18 @@
+{
+  "name": "obj-crossref",
+  "version": "1.0.0",
+  "description": "Object with cross referencing property values",
+  "main": "CrossRefObject.js",
+  "dependencies": {
+    "lodash.escaperegexp": "^4.1.2"
+  },
+  "devDependencies": {
+    "getobject": "^0.1.0",
+    "lodash.template": "^4.4.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Yoannis Jamar <yoannis.j@gmail.com>",
+  "license": "ISC"
+}
