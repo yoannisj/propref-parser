@@ -1,7 +1,7 @@
 'use strict';
 
 // ============================================================================
-// =CrossCrossRefObject
+// =PropRefParser
 // ============================================================================
 
 var escapeRe = require('lodash.escaperegexp');
@@ -34,7 +34,7 @@ var defaults = {
 // =Constructor
 // ============================================================================
 
-var CrossRefObject = module.exports = function( props, options )
+var PropRefParser = module.exports = function( props, options )
 {
     // attach reference to given properties
     this.props = props;
@@ -44,7 +44,7 @@ var CrossRefObject = module.exports = function( props, options )
 
     // verify getter and attach reference if valid
     if (!this.options.getter || typeof this.options.getter != 'function') {
-        throw new Error('CrossRefObject: `getter` option must be a function, '
+        throw new Error('PropRefParser: `getter` option must be a function, '
             + 'used to return referenced property values.');
     }
 
@@ -65,7 +65,7 @@ var CrossRefObject = module.exports = function( props, options )
 // =keyJoin( ..keys )
 // ----------------------------------------------------------------------------
 
-CrossRefObject.prototype.keyJoin = function()
+PropRefParser.prototype.keyJoin = function()
 {
     // make sense out of given arguments
     var keys = [].slice.call(arguments);
@@ -76,7 +76,7 @@ CrossRefObject.prototype.keyJoin = function()
 // =keyResolve( ..keys )
 // ----------------------------------------------------------------------------
 
-CrossRefObject.prototype.keyResolve = function()
+PropRefParser.prototype.keyResolve = function()
 {
     // make sense out of given arguments
     var keys = [].slice.call(arguments);
@@ -92,7 +92,7 @@ CrossRefObject.prototype.keyResolve = function()
 // =get( key )
 // ----------------------------------------------------------------------------
 
-CrossRefObject.prototype.get = function( key )
+PropRefParser.prototype.get = function( key )
 {
     // use getter to retrieve value, and parse it before caching it
     var val = this.getter(this.props, key, this.options);
@@ -104,7 +104,7 @@ CrossRefObject.prototype.get = function( key )
 // =parse( val )
 // ----------------------------------------------------------------------------
 
-CrossRefObject.prototype.parse = function( val, context )
+PropRefParser.prototype.parse = function( val, context )
 {
     // parse own props if no value was given
     if (arguments.length == 0) {

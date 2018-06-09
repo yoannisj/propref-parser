@@ -1,8 +1,8 @@
-# crossref-obj
+# propref-parser
 
 - Usage
-    + Flat object properties
-    + Accessing nested object properties
+    + Flat properties
+    + Accessing nested properties
 - API
 - Options
 - Examples
@@ -11,12 +11,12 @@
 
 ## Usage
 
-In order to remain lightweight and customizable, 'crossref-obj' is a *batteries not included* package. Meaning, you have to provide a custom [getter function](#options-getter) to get values from referenced property keys.
+In order to remain lightweight and customizable, 'propref-parser' is a *batteries not included* package. Meaning, you have to provide a custom [getter function](#options-getter) to get values from referenced property keys.
 
-### Flat object properties
+### Flat properties
 
 ```js
-var CrossRefObj = require('crossref-obj');
+var PropRefParser = require('crossref-obj');
 
 var opts = {
     getter: function(props, key, opts) {
@@ -29,19 +29,19 @@ var props = {
     bar: '@{foo}'
 };
 
-// instanciate new CrossRefObject
-var xObj = new CrossRefObj(props, opts);
+// instanciate new PropRefParser
+var parser = new PropRefParser(props, opts);
 
-xObj.get('bar');
+parser.get('bar');
 // -> true
 ```
 
-### Accessing nested object properties
+### Accessing nested properties
 
-If you want to access nested object properties using '.' separated key paths, we recommend using the [getobject](https://www.npmjs.com/package/getobject) package to define your custom getter:
+If you want to access nested properties using '.' separated key paths, we recommend using the [getobject](https://www.npmjs.com/package/getobject) package to define your custom getter:
 
 ```js
-var CrossRefObj = require('crossref-obj');
+var PropRefParser = require('crossref-obj');
 var getobject = require('getobject');
 
 var props =
@@ -59,10 +59,10 @@ var props =
     }
 };
 
-CrossRefObj.get('bar');
+PropRefParser.get('bar');
 // -> true
 
-CrossRefObj.parse();
+PropRefParser.parse();
 // -> {
 //   foo: true,
 //   nested: {
@@ -104,17 +104,17 @@ Custom getter function used to return values for referenced property keys.
 Signature: `function( props, key, options ) { /*...*/ }`
     - `props` context properties used to resolve given key
     - `key` absolute key to resolve
-    - `options` current *CrossRefObj* options
+    - `options` current *PropRefParser* options
 
 **Important**: This option is required, otherwise referenced property keys can not be resolved. Omitting it will throw an error.
 
 `options.parser` (Function) \[null\]
 
-Custom parser function, ran whenever the CrossRefObject is parsing a property value.
+Custom parser function, ran whenever the PropRefParser is parsing a property value.
 Signature: `funcion( props, value, options ) { /* ... */`
     - `props` context properties used to resolve given key
     - `value` value that is being parsed (with property refernces resolved!)
-    - `options` current *CrossRefObj* options
+    - `options` current *PropRefParser* options
 
 **Important**: Referenced property values are already resolved in the value passed as second argument to custom parser functions.
 
@@ -141,40 +141,40 @@ Char(s) used for moving up in relative keypaths.
 
 ```js
 // Default key patterns
-var xObj = new CrossRefObject();
-xObj.keyJoin( 'nested.object', '.prop'); // nested.object.prop
-xObj.keyJoin( 'nested.object', '-.prop'); // nested.object.prop
-xObj.keyJoin( 'nested.object', '--.prop'); // nested.prop
-xObj.keyJoin( 'nested.object', '--.--.prop'); // prop
-xObj.keyResolve( 'nested.object.--.prop'); // nested.prop
+var parser = new PropRefParser();
+parser.keyJoin( 'nested.object', '.prop'); // nested.object.prop
+parser.keyJoin( 'nested.object', '-.prop'); // nested.object.prop
+parser.keyJoin( 'nested.object', '--.prop'); // nested.prop
+parser.keyJoin( 'nested.object', '--.--.prop'); // prop
+parser.keyResolve( 'nested.object.--.prop'); // nested.prop
 ```
 
 ```js
 // Use *filepath-like* key patterns
-var xObj = new CrossRefObject({ /*...*/ }, {
+var parser = new PropRefParser({ /*...*/ }, {
     splitChar: '/',
     upLevelChar: '.'
 });
 
-xObj.keyJoin( 'nested/object', '/prop'); // nested/object/prop
-xObj.keyJoin( 'nested/object', './prop'); // nested/object/prop
-xObj.keyJoin( 'nested/object', '../prop'); // nested/object/prop
-xObj.keyJoin( 'nested/object', '../../prop'); // prop
-xObj.keyResolve( 'nested/object/../prop'); // nested/prop
+parser.keyJoin( 'nested/object', '/prop'); // nested/object/prop
+parser.keyJoin( 'nested/object', './prop'); // nested/object/prop
+parser.keyJoin( 'nested/object', '../prop'); // nested/object/prop
+parser.keyJoin( 'nested/object', '../../prop'); // prop
+parser.keyResolve( 'nested/object/../prop'); // nested/prop
 ```
 
 ```js
 // Define your own key patterns
-var xObj = new CrossRefObject({ /*...*/ }, {
+var parser = new PropRefParser({ /*...*/ }, {
     splitChar: ':',
     upLevelChar: '_'
 });
 
-xObj.keyJoin( 'nested:object', ':prop'); // nested:object:prop
-xObj.keyJoin( 'nested:object', '_:prop'); // nested:object:prop
-xObj.keyJoin( 'nested:object', '__:prop'); // nested:prop
-xObj.keyJoin( 'nested:object', '__:__:prop'); // prop
-xObj.keyResolve( 'nested:object:__:prop'); // nested:prop
+parser.keyJoin( 'nested:object', ':prop'); // nested:object:prop
+parser.keyJoin( 'nested:object', '_:prop'); // nested:object:prop
+parser.keyJoin( 'nested:object', '__:prop'); // nested:prop
+parser.keyJoin( 'nested:object', '__:__:prop'); // prop
+parser.keyResolve( 'nested:object:__:prop'); // nested:prop
 ```
 
 ### Dynamic property values
@@ -182,7 +182,7 @@ xObj.keyResolve( 'nested:object:__:prop'); // nested:prop
 Using template strings and the [parser]() option, you can get dynamic property values, based on the other values in your object properties:
 
 ```js
-var CrossRefObject = require('crossref-obj');
+var PropRefParser = require('crossref-obj');
 var _templ = require('lodash.template');
 
 var props = {
@@ -204,8 +204,8 @@ var opts = {
     }
 };
 
-var xObj = new CrossRefObject(props, opts);
-xObj.parse('bar');
+var parser = new PropRefParser(props, opts);
+parser.parse('bar');
 // -> {
 //    foo: true,
 //    bar: "yup"
@@ -214,7 +214,8 @@ xObj.parse('bar');
 
 ## TODO
 
-- Ignore escaped split and upLevel characters
+- Implement an '.escape' method to escape references in given value
+- Ignore escaped references, split and upLevel characters
 - Ignore context for absolute keypaths in property references
 - Default to simple getter `function(props, key, opts) { return props[key]; }`
 
@@ -224,4 +225,8 @@ xObj.parse('bar');
 - Write test suite
 
 - Support advanced keypath using mutliple key adapters –each with their own splitChar, upLevelChar, getter and parser
+
+- Support file and url references
+- Support custom sources (yaml, json, db, ...)
+- Support sync and async (callback or promise) loading of files and urls
 
