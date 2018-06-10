@@ -1,7 +1,6 @@
 # propref-parser
 
 - Usage
-    + Flat properties
     + Accessing nested properties
 - API
 - Options
@@ -11,18 +10,8 @@
 
 ## Usage
 
-In order to remain lightweight and customizable, 'propref-parser' is a *batteries not included* package. Meaning, you have to provide a custom [getter function](#options-getter) to get values from referenced property keys.
-
-### Flat properties
-
 ```js
 var PropRefParser = require('crossref-obj');
-
-var opts = {
-    getter: function(props, key, opts) {
-        return props[key];
-    }
-};
 
 var props = {
     foo: true,
@@ -38,7 +27,9 @@ parser.get('bar');
 
 ### Accessing nested properties
 
-If you want to access nested properties using '.' separated key paths, we recommend using the [getobject](https://www.npmjs.com/package/getobject) package to define your custom getter:
+Nested properties are supported through the 'getter' option which allows you to define a custom getter function –used to get the value for a referenced property key.
+
+For dot-notation, we recommend using the [getobject](https://www.npmjs.com/package/getobject) package to define your custom getter:
 
 ```js
 var PropRefParser = require('crossref-obj');
@@ -59,10 +50,22 @@ var props =
     }
 };
 
-PropRefParser.get('bar');
+var options = {
+
+    splitChar: '.',
+
+    getter: function(props, key, options) {
+        return getobject.get(props, key);
+    }
+
+};
+
+var parser = new PropRefParser(props, options);
+
+parser.get('bar');
 // -> true
 
-PropRefParser.parse();
+parser.parse();
 // -> {
 //   foo: true,
 //   nested: {
@@ -104,9 +107,7 @@ Custom getter function used to return values for referenced property keys.
 Signature: `function( props, key, options ) { /*...*/ }`
     - `props` context properties used to resolve given key
     - `key` absolute key to resolve
-    - `options` current *PropRefParser* options
-
-**Important**: This option is required, otherwise referenced property keys can not be resolved. Omitting it will throw an error.
+    - `options` options for *PropRefParser* instance
 
 `options.parser` (Function) \[null\]
 
@@ -114,7 +115,7 @@ Custom parser function, ran whenever the PropRefParser is parsing a property val
 Signature: `funcion( props, value, options ) { /* ... */`
     - `props` context properties used to resolve given key
     - `value` value that is being parsed (with property refernces resolved!)
-    - `options` current *PropRefParser* options
+    - `options` options for *PropRefParser* instance
 
 **Important**: Referenced property values are already resolved in the value passed as second argument to custom parser functions.
 
@@ -179,7 +180,7 @@ parser.keyResolve( 'nested:object:__:prop'); // nested:prop
 
 ### Dynamic property values
 
-Using template strings and the [parser]() option, you can get dynamic property values, based on the other values in your object properties:
+Using template strings and the [parser]() option, you can get dynamic property values, based on expressions using property references:
 
 ```js
 var PropRefParser = require('crossref-obj');

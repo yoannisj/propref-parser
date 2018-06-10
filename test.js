@@ -1,54 +1,40 @@
+var PropRefParser = require('./ProprefParser');
+var ObjBaseProp = require('obj-baseprop');
 
-var str= "nested.foo.bar",
-      splitChar = '\\.',
-      re;
+var props = {
 
-splitChar = splitChar.source || splitChar;
-re = new RegExp(splitChar, 'g');
+    '*': {
+        devMode: false,
+        includeScriptUrl: false
+    },
 
-console.log( splitChar, '–', re );
-console.log( str.split(re) );
+    dev: {
+       devMode: true,
+       siteUrl: 'https://www.example.test',
+       prodUrl: '@{ .prod.siteUrl }',
+       prodDevMode: '@{ .prod.devMode }'
+    },
 
-// var RefObject = require('./index');
-// var getobject = require('getobject');
-// var _templ = require('lodash.template');
+    prod: {
+        siteUrl: 'https://www.example.com',
+        enableCache: true
+    }
 
-// var props = {
-//     foo: true,
-//     str: 'hello world',
-//     bar: '@{ foo }',
-//     array: [ '@{nested.bar}', 10, 'hello' ],
-//     eval: '<% if (@{bar}) { print("yup"); } else { print("nope"); } %>',
-//     intpl: '<% print("@{str}"); %>',
+};
 
-//     nested: {
-//         foo: false,
-//         bar: '@{ foo }',
-//         array: [ '@{ --.bar }', 20, 'world' ],
-//         eval: '<% if (@{bar}) { print("yup"); } else { print("nope"); } %>',
-//         intpl: '<%= @{bar} %>',
-//         cycle: '<% print("@{--.intpl}"); %>'
-//     }
-// };
+var opts = {
 
-// var getter = function(props, key, opts) {
-//     return getobject.get(props, key);
-// };
+    getter: function(props, key, options) {
+        return ObjBaseProp.get(props, key);
+    }
 
-// var parser = function(props, val, opts) {
-//     return _templ(val)();
-// };
+};
 
-// var opts = {
-//     getter: getter,
-//     parser: parser
-// };
+var parser = new PropRefParser(props, opts);
 
-// var rObj = new RefObject(props, opts);
 
-// var parsed = rObj.parse();
-// console.log(rObj.props);
-// console.log('======');
-// console.log('->',  parsed);
-// // console.log('---');
-// // console.log('nested.bar ->', parsed['nested']['bar']);
+console.log(ObjBaseProp.get(props, 'dev'));
+console.log('---');
+console.log(parser.getter(props, 'dev'));
+console.log('---');
+console.log(parser.get('dev'));

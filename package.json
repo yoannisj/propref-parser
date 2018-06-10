@@ -2,7 +2,7 @@
   "name": "propref-parser",
   "version": "1.0.0",
   "description": "A minimal parser for (cross-)property references",
-  "main": "ProprefParser.js",
+  "main": "PropRefParser.js",
   "dependencies": {
     "lodash.escaperegexp": "^4.1.2"
   },

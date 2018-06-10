@@ -1,26 +1,17 @@
 'use strict';
 
-// Uses Node, AMD or browser globals to create a module. This example creates
+// Universal Module defined using the 'returnExportsGlobal' patten:
+// https://github.com/umdjs/umd/blob/master/templates/returnExportsGlobal.js
+
+// Uses Node, AMD or browser globals to create a module. This pattern creates
 // a global even when AMD is used. This is useful if you have some scripts
 // that are loaded by an AMD loader, but they still want access to globals.
-// If you do not need to export a global for the AMD case,
-// see returnExports.js.
-
-// If you want something that will work in other stricter CommonJS environments,
-// or if you need to create a circular dependency, see commonJsStrictGlobal.js
-
-// Defines a module "returnExportsGlobal" that depends another module called
-// "b". Note that the name of the module is implied by the file name. It is
-// best if the file name and the exported global have matching names.
-
-// If the 'b' module also uses this type of boilerplate, then
-// in the browser, it will create a global .b that is used below.
 
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
         // AMD. Register as an anonymous module.
         define(['lodash/escapeRegExp'], function (escapeRegExp) {
-            return (root.CrossRefObject = factory(escapeRegExp));
+            return (root.PropRefParser = factory(escapeRegExp));
         });
     } else if (typeof module === 'object' && module.exports) {
         // Node. Does not work with strict CommonJS, but
@@ -29,17 +20,21 @@
         module.exports = factory(require('lodash.escaperegexp'));
     } else {
         // Browser globals
-        root.CrossRefObject = factory(root.escapeRegExp);
+        root.PropRefParser = factory(root.escapeRegExp);
     }
 }(typeof self !== 'undefined' ? self : this, function (escapeRegExp) {
 
 // ============================================================================
-// =CrossCrossRefObject
+// =PropRefParser
 // ============================================================================
+
+var dfGetter = function(props, key, options) {
+    return props[key];
+};
 
 var defaults = {
 
-    getter: null,
+    getter: dfGetter,
     parser: null,
 
     // Pattern used to recognize property references
@@ -65,7 +60,7 @@ var defaults = {
 // =Constructor
 // ============================================================================
 
-var CrossRefObject = function( props, options )
+var PropRefParser = function( props, options )
 {
     // attach reference to given properties
     this.props = props;
@@ -73,12 +68,7 @@ var CrossRefObject = function( props, options )
     // inject defaults and attach reference to resulting options
     this.options = Object.assign({}, defaults, options || {});
 
-    // verify getter and attach reference if valid
-    if (!this.options.getter || typeof this.options.getter != 'function') {
-        throw new Error('CrossRefObject: `getter` option must be a function, '
-            + 'used to return referenced property values.');
-    }
-
+    // attach reference to getter and parser functions
     this.getter = this.options.getter;
     this.parser = this.options.parser;
 
@@ -88,6 +78,13 @@ var CrossRefObject = function( props, options )
         enumerable: false,
         value: computeRefRe(this.options)
     });
+
+    // compute Regexp to identify absolute keys
+    Object.defineProperty(this, '_absoluteRe', {
+        writable: false,
+        enumerable: false,
+        value: new RegExp('^(?:' + escapeRegExp(this.options.splitChar) + ').+')
+    });
 };
 
 // =Public API
@@ -96,10 +93,10 @@ var CrossRefObject = function( props, options )
 // =keyJoin( ..keys )
 // ----------------------------------------------------------------------------
 
-CrossRefObject.prototype.keyJoin = function()
+PropRefParser.prototype.keyJoin = function()
 {
     // make sense out of given arguments
-    var keys = [].slice.call(arguments);
+    var keys = Array.prototype.slice.call(arguments);
 
     return keyJoin(this, keys);
 };
@@ -107,13 +104,13 @@ CrossRefObject.prototype.keyJoin = function()
 // =keyResolve( ..keys )
 // ----------------------------------------------------------------------------
 
-CrossRefObject.prototype.keyResolve = function()
+PropRefParser.prototype.keyResolve = function()
 {
     // make sense out of given arguments
-    var keys = [].slice.call(arguments);
+    var keys = Array.prototype.slice.call(arguments);
 
-    // start with key base from options
-    if (this.options.keyBase != '') {
+    // start relative keys with key base from options
+    if (this.options.keyBase != '' && !this._absoluteRe.test(keys[0])) {
         keys.unshift(this.options.keyBase);
     }
 
@@ -123,7 +120,7 @@ CrossRefObject.prototype.keyResolve = function()
 // =get( key )
 // ----------------------------------------------------------------------------
 
-CrossRefObject.prototype.get = function( key )
+PropRefParser.prototype.get = function( key )
 {
     // use getter to retrieve value, and parse it before caching it
     var val = this.getter(this.props, key, this.options);
@@ -135,7 +132,7 @@ CrossRefObject.prototype.get = function( key )
 // =parse( val )
 // ----------------------------------------------------------------------------
 
-CrossRefObject.prototype.parse = function( val, context )
+PropRefParser.prototype.parse = function( val, context )
 {
     // parse own props if no value was given
     if (arguments.length == 0) {
@@ -173,30 +170,30 @@ var computeRefRe = function( options )
     return new RegExp( refSource.replace('$&', '(' + keySource + ')'), 'g');
 };
 
-// =keyJoin( xObj, keys )
+// =keyJoin( parser, keys )
 // ----------------------------------------------------------------------------
 
-var keyJoin = function( xObj, keys )
+var keyJoin = function( parser, keys )
 {
-    var options = xObj.options,
+    var options = parser.options,
         res = keys.join(options.splitChar),
         matches, matchLn, pre, suf, upLvl;
 
     // get strings and regular expressions based on options
-    xObj._splitSource = xObj._splitSource || escapeRegExp(options.splitChar);
-    xObj._upLvlSource = xObj._upLvlSource || escapeRegExp(options.upLevelChar);
-    xObj._doubleSplitRe = xObj._doubleSplitRe || new RegExp('(?:' + xObj._splitSource + '){2}', 'g');
-    xObj._initSplitRe = xObj._initSplitRe || new RegExp('^(?:' + xObj._splitSource + ')');
-    xObj._relRe = xObj._relRe || new RegExp('(?:' + xObj._upLvlSource + '{1}' + xObj._splitSource + ')+', 'g');
-    xObj._upLvlRe = xObj._upLvlRe || new RegExp('(?:' + xObj._upLvlSource + '{2}' + xObj._splitSource + ')+', 'g');
-    xObj._relStr = xObj._relStr || options.upLevelChar + options.splitChar;
-    xObj._upLvlStr = xObj._upLvlStr || options.upLevelChar + options.upLevelChar + options.splitChar;
+    parser._splitSource = parser._splitSource || escapeRegExp(options.splitChar);
+    parser._upLvlSource = parser._upLvlSource || escapeRegExp(options.upLevelChar);
+    parser._doubleSplitRe = parser._doubleSplitRe || new RegExp('(?:' + parser._splitSource + '){2}', 'g');
+    parser._initSplitRe = parser._initSplitRe || new RegExp('^(?:' + parser._splitSource + ')');
+    parser._relRe = parser._relRe || new RegExp('(?:' + parser._upLvlSource + '{1}' + parser._splitSource + ')+', 'g');
+    parser._upLvlRe = parser._upLvlRe || new RegExp('(?:' + parser._upLvlSource + '{2}' + parser._splitSource + ')+', 'g');
+    parser._relStr = parser._relStr || options.upLevelChar + options.splitChar;
+    parser._upLvlStr = parser._upLvlStr || options.upLevelChar + options.upLevelChar + options.splitChar;
 
     // resolve relative key segments
-    while ((matches = xObj._upLvlRe.exec(res)) !== null)
+    while ((matches = parser._upLvlRe.exec(res)) !== null)
     {
         matchLn = matches[0].length;
-        upLvl = matchLn / xObj._upLvlStr.length;
+        upLvl = matchLn / parser._upLvlStr.length;
         pre = res.slice(0, matches.index - 1).split(options.splitChar);
         suf = res.slice(matches.index + matchLn);
 
@@ -209,26 +206,26 @@ var keyJoin = function( xObj, keys )
         res = pre.join(options.splitChar) + options.splitChar + suf;
 
         // make sure we don't start looking after last rel char(s)
-        xObj._upLvlRe.lastIndex = 0;
+        parser._upLvlRe.lastIndex = 0;
     }
 
     // remove same level relative segments
-    res = res.replace(xObj._relRe, options.splitChar)
+    res = res.replace(parser._relRe, options.splitChar)
         // remove double split characters
-        .replace(xObj._doubleSplitRe, options.splitChar)
+        .replace(parser._doubleSplitRe, options.splitChar)
         // remove initial split characters (empty keyBase and absolute paths)
-        .replace(xObj._initSplitRe, '');
+        .replace(parser._initSplitRe, '');
 
     return res;
 };
 
-// =parseValue( xObj, val[, _context ])
+// =parseValue( parser, val[, _context ])
 // ----------------------------------------------------------------------------
 
-var parseValue = function( xObj, val, _context )
+var parseValue = function( parser, val, _context )
 {
     // use reference object options
-    var options = xObj.options;
+    var options = parser.options;
 
     // accept a key as context
     if (typeof _context == 'string') {
@@ -244,13 +241,13 @@ var parseValue = function( xObj, val, _context )
 
         // parse each value individualy
         for (var i = 0, ln = val.length; i<ln; i++) {
-            res[i] = parseValue(xObj, val[i], _context);
+            res[i] = parseValue(parser, val[i], _context);
         }
 
         return res;
     }
 
-    else if (typeof val == 'object')
+    else if (val && typeof val == 'object')
     {
         var res = {},
             keyBase = options.keyBase || '',
@@ -262,7 +259,7 @@ var parseValue = function( xObj, val, _context )
             key = keys[i];
 
             // parse nested value
-            res[key] = parseValue(xObj, val[key], _context.concat([key]));
+            res[key] = parseValue(parser, val[key], _context.concat([key]));
         }
 
         return res;
@@ -272,39 +269,45 @@ var parseValue = function( xObj, val, _context )
     if (_context.length) _context.pop();
 
     // inspect string values from the start again
-    xObj._refRe.lastIndex = 0;
+    parser._refRe.lastIndex = 0;
 
     var matches, match, matchLn, key;
-    while (typeof val == 'string' && (matches = xObj._refRe.exec(val)) !== null)
+    while (typeof val == 'string' && (matches = parser._refRe.exec(val)) !== null)
     {
         match = matches[0];
         matchLn = match.length;
-        key = xObj.keyResolve(_context.join(options.splitChar), matches[1]);
+
+        // contextualize relative keys
+        if (!parser._absoluteRe.test(matches[1])) {
+            key = parser.keyResolve(_context.join(options.splitChar), matches[1]);
+        } else {
+            key = parser.keyResolve(matches[1]);
+        }
 
         // optionally preserve data type if this was an exact reference match
         if (options.preserveDataType && match.length == matches.input.length) {
-            val = xObj.get(key, options);
+            val = parser.get(key, options);
         }
 
         // or interpolate value in parsed string
         else {
-            val = val.replace(match, xObj.get(key, options));
+            val = val.replace(match, parser.get(key, options));
         }
 
         // make sure we inspect the string from the start again
-        xObj._refRe.lastIndex = 0;
+        parser._refRe.lastIndex = 0;
     }
 
     // optionally parse string values using custom parser
-    if (typeof val == 'string' && xObj.parser && typeof xObj.parser == 'function') {
-        val = xObj.parser(xObj.props, val, xObj.options);
+    if (typeof val == 'string' && parser.parser && typeof parser.parser == 'function') {
+        val = parser.parser(parser.props, val, parser.options);
     }
 
     return val;
 };
 
 
-// Export the CrossRefObject constructor
-return CrossRefObject;
+// Export the PropRefParser constructor
+return PropRefParser;
 
 }));
