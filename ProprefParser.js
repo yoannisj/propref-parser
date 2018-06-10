@@ -1,3 +1,5 @@
+/*! propref-parse.js v1.0.1 | ISC License | https://github.com/yoannisj/propref-parser */
+
 'use strict';
 
 // Universal Module defined using the 'returnExportsGlobal' patten:
@@ -20,7 +22,13 @@
         module.exports = factory(require('lodash.escaperegexp'));
     } else {
         // Browser globals
-        root.PropRefParser = factory(root.escapeRegExp);
+        // find underscore.escapeRegExp dependency
+        var escapeRegExp = (root._ || root.lodash || root.underscore || root).escapeRegExp;
+        if (typeof escapeRegExp != 'function') {
+            throw new Error('PropRefParser: Could not find valid `_.escapeRegExp dependency');
+        }
+        // expose module as a browser global
+        root.PropRefParser = factory(escapeRegExp);
     }
 }(typeof self !== 'undefined' ? self : this, function (escapeRegExp) {
 

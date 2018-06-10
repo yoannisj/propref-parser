@@ -1,7 +1,20 @@
 {
   "name": "propref-parser",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A minimal parser for (cross-)property references",
+  "keywords": [
+    "javascript",
+    "reference",
+    "object",
+    "parser",
+    "config"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yoannisj/propref-parser"
+  },
+  "homepage": "https://github.com/yoannisj/propref-parser",
+  "bugs": "https://github.com/yoannisj/propref-parser/issues",
   "main": "PropRefParser.js",
   "dependencies": {
     "lodash.escaperegexp": "^4.1.2"
@@ -13,6 +26,6 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Yoannis Jamar <yoannis.j@gmail.com>",
+  "author": "Yoannis Jamar <office@yoannis.com> (https://yoannis.com)",
   "license": "ISC"
 }
